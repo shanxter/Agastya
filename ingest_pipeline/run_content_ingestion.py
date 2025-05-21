@@ -2,21 +2,32 @@ import json
 import time
 import os
 import logging
+from dotenv import load_dotenv
 
-# Assuming data_collector.py is in the same directory (Agastya/ingest_pipeline/)
+# First, load environment variables BEFORE importing from data_collector
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+    logging.info(f"Loaded environment variables from: {dotenv_path}")
+else:
+    logging.info(f".env file not found at {dotenv_path}, relying on system environment variables.")
+
+# Now import from data_collector AFTER environment variables are loaded
 try:
-    from data_collector import main_collector, CORE_API_KEY, NEWSAPI_API_KEY
+    from data_collector import main_collector, NEWSAPI_API_KEY
 except ImportError:
     logging.critical("ERROR: Could not import 'main_collector' from data_collector.py.")
     logging.critical("Ensure data_collector.py is in the 'Agastya/ingest_pipeline/' directory.")
     exit()
 
-# --- Configuration ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Log API key status for debugging
+logging.info(f"NEWSAPI_API_KEY is set: {bool(NEWSAPI_API_KEY)}, length: {len(NEWSAPI_API_KEY) if NEWSAPI_API_KEY else 0}")
 
-INDICATIONS_FILENAME = "Indication Groupings.txt"
+# --- Configuration ---
+INDICATIONS_FILENAME = "Indication Groupings.json"
 FINAL_OUTPUT_JSONL_FILENAME = "all_indications_raw_content.jsonl"
-MAX_RESULTS_PER_SOURCE_PER_TERM = 300
+MAX_RESULTS_PER_SOURCE_PER_TERM = 50
 DELAY_BETWEEN_TERMS_SECONDS = 4
 MAX_LENGTH_TERM_FOR_GENERAL_APIS = 70
 
@@ -39,6 +50,9 @@ def load_indications(resolved_indications_filepath): # DISTINCT PARAMETER NAME
 
 # --- Main Orchestration ---
 def run_full_content_ingestion(full_indications_path_arg, output_jsonl_full_path_arg): # DISTINCT ARG NAMES
+    # Debug print added
+    logging.info(f"Debug - NEWSAPI_API_KEY is set: {bool(NEWSAPI_API_KEY)}, value length: {len(NEWSAPI_API_KEY) if NEWSAPI_API_KEY else 0}")
+    
     indication_terms = load_indications(full_indications_path_arg) # PASSING DISTINCT ARG
     if not indication_terms:
         logging.error("No indication terms loaded by load_indications. Exiting run_full_content_ingestion.")
@@ -57,8 +71,6 @@ def run_full_content_ingestion(full_indications_path_arg, output_jsonl_full_path
         api_queries_for_current_term = {}
         api_queries_for_current_term["pubmed"] = indication_term
         api_queries_for_current_term["clinicaltrials"] = indication_term
-        if CORE_API_KEY:
-            api_queries_for_current_term["core"] = indication_term
         if NEWSAPI_API_KEY:
             if len(indication_term) > MAX_LENGTH_TERM_FOR_GENERAL_APIS:
                 logging.debug(f"  Term '{indication_term}' potentially long for NewsAPI, using as is.")
@@ -107,21 +119,6 @@ def run_full_content_ingestion(full_indications_path_arg, output_jsonl_full_path
         logging.info("No data was accumulated to write to the final file.")
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-    dotenv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
-    if os.path.exists(dotenv_path):
-        load_dotenv(dotenv_path=dotenv_path)
-        logging.info(f"Loaded environment variables from: {dotenv_path}")
-    else:
-        logging.info(f".env file not found at {dotenv_path}, relying on system environment variables.")
-
-    current_newsapi_key = os.getenv("NEWSAPI_API_KEY")
-    current_core_api_key = os.getenv("CORE_API_KEY")
-    if not current_newsapi_key:
-        logging.warning("NEWSAPI_API_KEY is not set. NewsAPI calls will be skipped by data_collector.")
-    if not current_core_api_key:
-        logging.warning("CORE_API_KEY is not set. CORE API calls will be skipped by data_collector.")
-
     script_dir = os.path.dirname(os.path.abspath(__file__))
     indications_full_path = os.path.join(script_dir, INDICATIONS_FILENAME)
     output_jsonl_full_path = os.path.join(script_dir, FINAL_OUTPUT_JSONL_FILENAME)

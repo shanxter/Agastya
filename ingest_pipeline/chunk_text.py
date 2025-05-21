@@ -5,10 +5,12 @@ import uuid # To generate unique IDs for chunks
 
 # Using LangChain for text splitting
 try:
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
-    # from langchain_text_splitters import RecursiveCharacterTextSplitter # Newer import path
+    # Old import path that doesn't work with newer versions
+    # from langchain.text_splitter import RecursiveCharacterTextSplitter
+    # Use newer import path for LangChain 
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
-    logging.error("LangChain not installed. Please install it: pip install langchain")
+    logging.error("LangChain not installed. Please install it: pip install langchain langchain_text_splitters")
     exit()
 
 # --- Configuration ---

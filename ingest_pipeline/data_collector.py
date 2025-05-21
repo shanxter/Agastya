@@ -4,18 +4,17 @@ import os
 from datetime import datetime, timedelta
 import logging
 import time
+from urllib.parse import quote
 
 # --- 0. Configuration & Setup ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # API Keys (Store in environment variables)
 PUBMED_API_KEY = os.getenv("PUBMED_API_KEY")
-CORE_API_KEY = os.getenv("CORE_API_KEY")
 NEWSAPI_API_KEY = os.getenv("NEWSAPI_API_KEY")
 
 # Base URLs - Verified against general knowledge and common API structures
 PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
-CORE_BASE_URL = "https://api.core.ac.uk/v3/" # Using v3 as it's generally more current
 NEWSAPI_BASE_URL = "https://newsapi.org/v2/"
 WHO_NEWS_BASE_URL = "https://www.who.int/api/news/newsitems" # As per your table & common use
 CLINICALTRIALS_BASE_URL = "https://clinicaltrials.gov/api/v2/" # As per your table
@@ -176,55 +175,27 @@ def fetch_pubmed_data(search_term, max_results=50, start_date_str=None, end_date
     logging.info(f"Fetched {len(processed_articles)} items from PubMed for '{effective_search_term}'.")
     return processed_articles
 
-def fetch_core_data(search_term, max_results=50):
-    logging.info(f"Fetching CORE data for: {search_term}")
-    processed_articles = []
-    if not CORE_API_KEY:
-        logging.warning("CORE_API_KEY not set. Skipping CORE.")
-        return processed_articles
-        
-    search_url = f"{CORE_BASE_URL}search/works" 
-    params = {"q": search_term, "limit": max_results, "scroll": "false"} # scroll=false for simpler pagination if needed later
-    headers = {"Authorization": f"Bearer {CORE_API_KEY}"}
-    response_data = make_api_request(search_url, params=params, headers=headers)
-    
-    if response_data and "results" in response_data:
-        for item in response_data["results"]:
-            item_id = item.get("id", item.get("doi")) # CORE ID or DOI
-            title = item.get("title", "N/A")
-            # "body":"...abstract or full-text..."
-            text_content = item.get("abstract", "") 
-            if item.get("fullText") and isinstance(item.get("fullText"), str) and len(item.get("fullText")) > len(text_content):
-                text_content = item.get("fullText") # Prefer fullText if available and longer than abstract
-
-            authors_list = [author.get("name") for author in item.get("authors", []) if author.get("name")]
-            publication_date_str = item.get("publishedDate") # Expected ISO format e.g. "2023-01-15"
-            
-            item_url = item.get("downloadUrl") # As per table suggestion: downloadUrl or DOI link
-            if not item_url and item.get("doi"):
-                item_url = f"https://doi.org/{item.get('doi')}"
-            if not item_url: # Fallback to display URL if others are missing
-                 item_url = item.get("displayUrl")
-            
-            metadata = {"doi": item.get("doi"), "coreId": item.get("id"), "yearPublished": item.get("yearPublished")}
-            processed_articles.append(
-                 process_to_standard_format(item_id, "CORE", title, text_content, authors_list, publication_date_str, item_url, metadata)
-            )
-    else:
-        logging.warning(f"No 'results' in CORE API response for '{search_term}'. Response: {str(response_data)[:200]}")
-    logging.info(f"Fetched {len(processed_articles)} articles from CORE for '{search_term}'.")
-    return processed_articles
-
-def fetch_newsapi_data(search_term, category="health", country="us", max_results=100):
-    logging.info(f"Fetching NewsAPI data for: {search_term} (category: {category}, country: {country})")
+def fetch_newsapi_data(search_term, category="health", country="us", max_results=100, start_date_str=None, end_date_str=None):
+    logging.info(f"Fetching NewsAPI data for: {search_term} (category: {category}, country: {country}, dates: {start_date_str} to {end_date_str})")
     processed_articles = []
     if not NEWSAPI_API_KEY:
         logging.warning("NEWSAPI_API_KEY not set. Skipping NewsAPI.")
         return processed_articles
 
-    # Endpoint: /v2/top-headlines (as per table, or /everything for broader search)
-    url = f"{NEWSAPI_BASE_URL}top-headlines" 
-    params = {"q": search_term, "category": category, "country": country, "pageSize": max_results, "apiKey": NEWSAPI_API_KEY}
+    # Change from top-headlines to everything endpoint to support date filtering
+    url = f"{NEWSAPI_BASE_URL}everything" 
+    params = {
+        "q": search_term, 
+        "pageSize": max_results, 
+        "apiKey": NEWSAPI_API_KEY,
+        "language": "en"
+    }
+    
+    # Add date range parameters only if dates are provided
+    if start_date_str:
+        params["from"] = start_date_str
+    if end_date_str:
+        params["to"] = end_date_str
     
     response_data = make_api_request(url, params=params)
     if response_data and "articles" in response_data:
@@ -255,14 +226,27 @@ def fetch_newsapi_data(search_term, category="health", country="us", max_results
     logging.info(f"Fetched {len(processed_articles)} articles from NewsAPI for '{search_term}'.")
     return processed_articles
 
-def fetch_who_news_data(search_term=None, max_results=100):
-    logging.info(f"Fetching WHO News data (max: {max_results}). Search term: '{search_term}'.")
+def fetch_who_news_data(search_term=None, max_results=100, start_date_str=None, end_date_str=None):
+    logging.info(f"Fetching WHO News data (max: {max_results}, dates: {start_date_str} to {end_date_str}). Search term: '{search_term}'.")
     processed_items = []
     # Endpoint: GET /api/news/newsitems
     params = {"$orderby": "PublicationDateUtc desc", "$top": max_results}
-    if search_term: # OData $filter for search
-        params["$filter"] = f"contains(tolower(Title),tolower('{search_term}')) or contains(tolower(Content),tolower('{search_term}'))"
-        
+    
+    # Build OData filter for search and date range
+    filter_parts = []
+    
+    # Add date range filter if dates are provided
+    if start_date_str and end_date_str:
+        filter_parts.append(f"PublicationDateAndTime ge {start_date_str}T00:00:00Z and PublicationDateAndTime le {end_date_str}T23:59:59Z")
+    
+    # Add search term filter if provided
+    if search_term:
+        filter_parts.append(f"contains(tolower(Title),tolower('{search_term}')) or contains(tolower(Content),tolower('{search_term}'))")
+    
+    # Combine filter parts with 'and' if we have multiple conditions
+    if filter_parts:
+        params["$filter"] = " and ".join(filter_parts)
+    
     response_data = make_api_request(WHO_NEWS_BASE_URL, params=params)
     
     items_to_process = []
@@ -294,12 +278,19 @@ def fetch_who_news_data(search_term=None, max_results=100):
     logging.info(f"Fetched {len(processed_items)} items from WHO News for '{search_term}'.")
     return processed_items
 
-def fetch_clinicaltrials_data(search_term, max_results=30):
-    logging.info(f"Fetching ClinicalTrials.gov data for: {search_term}")
+def fetch_clinicaltrials_data(search_term, max_results=30, start_date_str=None, end_date_str=None):
+    logging.info(f"Fetching ClinicalTrials.gov data for: {search_term} (dates: {start_date_str} to {end_date_str})")
     processed_trials = []
     # Endpoint: GET /api/v2/studies?query=<terms>&status=<Recruiting>&pageSize=...
     url = f"{CLINICALTRIALS_BASE_URL}studies"
     params = {"query.term": search_term, "pageSize": max_results, "format": "json"} # Add other filters like status if needed
+    
+    # Add date filtering using lastUpdatePosted
+    if start_date_str and end_date_str:
+        # Convert YYYY-MM-DD to YYYYMMDD for ClinicalTrials.gov API
+        start_date_ct = start_date_str.replace("-", "")
+        end_date_ct = end_date_str.replace("-", "")
+        params["query.filter"] = f"lastUpdatePosted RANGE[{start_date_ct}, {end_date_ct}]"
     
     response_data = make_api_request(url, params=params)
     if response_data and "studies" in response_data:
@@ -359,7 +350,7 @@ def fetch_clinicaltrials_data(search_term, max_results=30):
     logging.info(f"Fetched {len(processed_trials)} trials from ClinicalTrials.gov for '{search_term}'.")
     return processed_trials
 
-def fetch_openfda_data(search_term, endpoint_config=None, limit=30):
+def fetch_openfda_data(search_term, endpoint_config=None, limit=30, start_date_str=None, end_date_str=None):
     # Default endpoint config if none provided
     if endpoint_config is None:
         endpoint_config = {"endpoint": "drug/event.json", "source_name_suffix": "drug-event", "title_prefix": "Adverse Event Report"}
@@ -368,20 +359,44 @@ def fetch_openfda_data(search_term, endpoint_config=None, limit=30):
     source_name = f"openFDA-{endpoint_config.get('source_name_suffix', endpoint.split('/')[0])}"
     title_prefix_template = endpoint_config.get("title_prefix", "OpenFDA Report")
     
-    logging.info(f"Fetching {source_name} data for term: '{search_term}'")
+    logging.info(f"Fetching {source_name} data for term: '{search_term}' (dates: {start_date_str} to {end_date_str})")
     processed_items = []
     url = f"{OPENFDA_BASE_URL}{endpoint}"
     
     # General search query. Specific endpoints might need more structured queries.
     # For "drug/event" search in relevant fields:
     if endpoint == "drug/event.json":
-        query_string = f'(patient.drug.drugindication:"{search_term}" OR patient.reaction.reactionmeddrapt:"{search_term}" OR openfda.brand_name:"{search_term}" OR openfda.generic_name:"{search_term}")'
+        base_query = f'(patient.drug.drugindication:"{search_term}" OR patient.reaction.reactionmeddrapt:"{search_term}" OR openfda.brand_name:"{search_term}" OR openfda.generic_name:"{search_term}")'
+        # Add date range for drug/event
+        if start_date_str and end_date_str:
+            date_query = f'+AND+receivedate:[{start_date_str}+TO+{end_date_str}]'
+            query_string = base_query + date_query
+        else:
+            query_string = base_query
     elif endpoint == "drug/label.json": # Example for drug labels
-        query_string = f'(openfda.brand_name:"{search_term}" OR openfda.generic_name:"{search_term}" OR indications_and_usage:"{search_term}")'
+        base_query = f'(openfda.brand_name:"{search_term}" OR openfda.generic_name:"{search_term}" OR indications_and_usage:"{search_term}")'
+        # Add date range for drug/label
+        if start_date_str and end_date_str:
+            date_query = f'+AND+effective_time:[{start_date_str}+TO+{end_date_str}]'
+            query_string = base_query + date_query
+        else:
+            query_string = base_query
     elif endpoint == "drug/drugsfda.json": # Example for FDA approvals
-        query_string = f'(products.brand_name:"{search_term}" OR sponsor_name:"{search_term}")'
+        base_query = f'(products.brand_name:"{search_term}" OR sponsor_name:"{search_term}")'
+        # Add date range for drugsfda using submission_status_date
+        if start_date_str and end_date_str:
+            date_query = f'+AND+submissions.submission_status_date:[{start_date_str}+TO+{end_date_str}]'
+            query_string = base_query + date_query
+        else:
+            query_string = base_query
     else: # Fallback to general quoted search term
-        query_string = f'"{search_term}"'
+        base_query = f'"{search_term}"'
+        # Generic date filtering - may need to be adjusted based on actual endpoint
+        if start_date_str and end_date_str:
+            date_query = f'+AND+effective_time:[{start_date_str}+TO+{end_date_str}]'
+            query_string = base_query + date_query
+        else:
+            query_string = base_query
 
     params = {"search": query_string, "limit": limit}
     response_data = make_api_request(url, params=params)
@@ -458,9 +473,6 @@ def main_collector(search_queries_map, output_file="collected_hcp_data.jsonl", m
     if "pubmed" in search_queries_map and search_queries_map["pubmed"]:
         all_collected_data.extend(fetch_pubmed_data(search_queries_map["pubmed"], max_results=max_results_per_source))
     
-    if "core" in search_queries_map and search_queries_map["core"]:
-        all_collected_data.extend(fetch_core_data(search_queries_map["core"], max_results=max_results_per_source))
-    
     # openFDA - fetch_openfda_data now takes an endpoint_config
     # For demonstration, let's assume the orchestrator wants drug events and drug approvals for a term
     if "openfda" in search_queries_map and search_queries_map["openfda"]:
@@ -501,7 +513,6 @@ if __name__ == "__main__":
     logging.info("Testing data_collector.py directly with updated fetchers...")
     test_queries = {
         "pubmed": "aspirin headache",
-        "core": "open access machine learning",
         "newsapi": "health technology",
         "who_news": "ebola", # Test with a term
         # "who_news": None, # Test for latest
