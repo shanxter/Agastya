@@ -1,0 +1,11 @@
+{
+  "include": [
+    "ingest_pipeline"
+  ],
+  "venvPath": "C:\\Users\\AbhishekKoshal\\AppData\\Local\\Programs\\Python\\Python313",
+  "pythonPath": "C:\\Users\\AbhishekKoshal\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportGeneralTypeIssues": "warning",
+  "useLibraryCodeForTypes": true
+} 
