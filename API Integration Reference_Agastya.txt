@@ -1,0 +1,119 @@
+# API Integration Reference
+
+This document outlines the available content, endpoints, Python integration, and standardized JSON mapping for each API used in the Agastya research lookup component.
+
+| API               | Content Available | Key Endpoints & Fields | Python Integration | Standardized JSON Structure |
+| ----------------- | ----------------- | ---------------------- | ------------------ | --------------------------- |
+| **PubMed (NCBI)** | - Title           |                        |                    |                             |
+
+* Abstract
+* Authors & affiliations
+* Journal name
+* Publication date
+* MeSH keywords
+* Identifiers (PMID, DOI)                              | - **ESearch**: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=<query>` to retrieve PMIDs
+* **EFetch**: `.../efetch.fcgi?db=pubmed&id=<PMID>&rettype=abstract&retmode=text` for abstracts
+* **ESummary**: `.../esummary.fcgi?db=pubmed&id=<PMID>&retmode=json` for metadata (Title, AuthorList, PubDate, Journal, DOI) | - **Biopython** (`Bio.Entrez.esearch`, `.efetch`, `.esummary`)
+* **PyMed** (`PubMed.query()`)
+* **requests** + XML/JSON parsing                                       | \`\`\`json
+  {
+  "source": "PubMed",
+  "title": "...",
+  "body": "...abstract...",
+  "authors": \["A. Author", "B. Author"],
+  "publication\_date": "YYYY-MM-DD",
+  "url": "[https://pubmed.ncbi.nlm.nih.gov/](https://pubmed.ncbi.nlm.nih.gov/)<PMID>/"
+  }
+
+````|
+| **CORE**              | - Title  
+- Authors (& affiliations)  
+- Publication date  
+- Journal / repository name  
+- DOI / CORE ID  
+- Abstract & description  
+- Full-text or PDF URLs (open access) | - **Search**: `GET https://api.core.ac.uk/v3/search/works?q=<query>` returns `title`, `abstract`, `authors`, etc.  
+- **Metadata**: `GET https://api.core.ac.uk/v3/works/<core_id>` for full metadata  
+- **Full-text**: `GET https://api.core.ac.uk/v3/works/<core_id>/fulltext` for text/PDF                           | - **requests** with API key in headers/params                                                                                                  | ```json
+{
+  "source": "CORE",
+  "title": "...",
+  "body": "...abstract/full text...",
+  "authors": ["A. Author", "B. Author"],
+  "publication_date": "YYYY-MM-DD",
+  "url": "<downloadUrl or DOI link>"
+}
+```                                                                            |
+| **NewsAPI**           | - Headline (`title`)  
+- Author (`author`)  
+- Source name (`source.name`)  
+- Description / excerpt  
+- Content snippet  
+- Published timestamp  
+- URL & image URL   | - **Top Headlines**: `GET https://newsapi.org/v2/top-headlines?country=us&category=health&apiKey=...`  
+- **Everything**: `GET https://newsapi.org/v2/everything?q=<keywords>&apiKey=...` returns `articles[]` with `title`, `description`, `content`, etc.                                                | - **newsapi-python** (`NewsApiClient`)  
+- **requests** for custom calls                                                                                                                   | ```json
+{
+  "source": "NewsAPI",
+  "title": "...",
+  "body": "<description> <content>",
+  "authors": ["Author Name"],
+  "publication_date": "YYYY-MM-DDTHH:MM:SSZ",
+  "url": "<article URL>"
+}
+```                                                    |
+| **WHO News**          | - Title  
+- Publication datetime  
+- URL slug & full URL  
+- Topic tags/GUIDs  
+- (No individual author; use organization)                          | - **List**: `GET https://www.who.int/api/news/newsitems` returns `Title`, `PublicationDateAndTime`, `UrlName`, `ItemDefaultUrl`, etc.  
+- **Detail**: `GET https://www.who.int/api/news/newsitems({GUID})` for single item fields                                                                                           | - **requests** to WHO API (no auth)  
+- Optionally scrape `ItemDefaultUrl` for full text                                                                                                | ```json
+{
+  "source": "WHO News",
+  "title": "...",
+  "body": "...full text...",
+  "authors": ["World Health Organization"],
+  "publication_date": "YYYY-MM-DDTHH:MM:SSZ",
+  "url": "https://www.who.int<UrlName>"
+}
+```                                                 |
+| **ClinicalTrials.gov** | - Brief & official titles  
+- Summaries (brief, detailed)  
+- Status & phase  
+- Conditions & interventions  
+- Outcome measures  
+- Sponsor/PI  
+- Dates  
+- Results posted | - **Search**: `GET https://clinicaltrials.gov/api/v2/studies?query=<terms>&status=Recruiting&pageSize=...` returns minimal fields  
+- **Detail**: `GET https://clinicaltrials.gov/api/v2/studies/{NCT_ID}` returns full JSON (`studyTitle`, `briefSummary`, `overallStatus`, `condition`, `intervention`, `primaryOutcomeMeasure`, `results`, etc.) | - **requests** to v2 endpoints (returns JSON)  
+- Handle pagination via `pageSize` and `page` params                                                          | ```json
+{
+  "source": "ClinicalTrials.gov",
+  "title": "...",
+  "body": "...briefSummary...",
+  "authors": ["Sponsor or PI"],
+  "publication_date": "YYYY-MM-DD",
+  "url": "https://clinicaltrials.gov/ct2/show/{NCT_ID}"
+}
+```                              |
+| **openFDA**           | - Adverse events (`reaction`, `outcome`)  
+- Labeling sections (indications, warnings)  
+- NDC product info  
+- Recalls (reason, classification)  
+- Approvals (application, date)  
+- Shortages              | - **Drug Event**: `GET https://api.fda.gov/drug/event.json?search=...` returns `results[].patient.drug`, `reaction`, `outcome`  
+- **Label**: `GET https://api.fda.gov/drug/label.json?search=...` returns label sections  
+- **DrugsFDA**: `GET https://api.fda.gov/drug/drugsfda.json?search=...` returns `results[].products` with `brand_name`, `approval_date`, etc. | - **requests** to openFDA endpoints  
+- Include API key for higher rate limits                                                                                                      | ```json
+{
+  "source": "openFDA-drugsfda",
+  "title": "FDA Approval – <brand_name>",
+  "body": "...text or summary...",
+  "authors": ["FDA"],
+  "publication_date": "YYYY-MM-DD",
+  "url": "<FDA API URL or web page>"
+}
+```                                            |
+
+````

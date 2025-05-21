@@ -1,0 +1,185 @@
+#  LLM-Powered HCP Assistant: Full System Architecture
+
+Agastya: Lore Behind the Name
+In ancient Indian lore, Sage Agastya was one of the wisest seers of the Vedic age — a figure revered not just for his spiritual depth but for his profound contributions to science, language, and medicine. It is said that while many rishis meditated in the Himalayas, Agastya ventured south, carrying with him the sacred knowledge of healing and wisdom, ensuring that enlightenment reached every corner of the land.
+
+More than a seeker, he was a teacher — a transmitter of knowledge. From botanical medicine to celestial understanding, Agastya's teachings laid the foundation for structured, reasoned, and accessible medical thought in early civilization.
+
+---
+
+##  OVERVIEW: How the LLM System Works
+
+This LLM-powered assistant for HCPs (Doctors & Panelists) is designed to support:
+
+1. **Real-time research/article queries**
+2. **Conference info lookup**
+3. **Panel support queries (honorarium, profile updates, etc.)**
+
+###  Flow of a Typical Query
+
+```mermaid
+flowchart TD
+    A[User Input Query] --> B[Classify Query Type]
+    B --> C1[Panel Support?]
+    B --> C2[Conference Info?]
+    B --> C3[Research / Knowledge Lookup?]
+
+    C1 --> D1[Call SQL Tool or Function]
+    C2 --> D2[Call Conference API / Static Data]
+    C3 --> D3[Embed Query] --> E[Search Vector DB for Top Matches]
+    E --> F[LLM Uses Retrieved Context to Generate Final Answer]
+
+    D1 --> G[Response to User]
+    D2 --> G
+    F --> G
+```
+
+---
+
+##  DIRECTORY STRUCTURE
+
+```
+llm-hcp-assistant/
+│
+├── ingest_pipeline/           # For fetching and embedding articles
+│   ├── fetch_content.py       # API calls to PubMed, arXiv, etc.
+│   ├── chunk_text.py          # Clean & chunk content
+│   ├── embed_and_store.py     # Generate embeddings and store in vector DB
+│
+├── db/
+│   ├── chroma_store/          # Chroma vector DB (local)
+│   └── sql_connector.py       # Connects to company panel SQL database
+│
+├── tools/
+│   ├── panel_support_tool.py  # Function calls for honoraria, profile edits
+│   ├── conference_tool.py     # Hardcoded or API-based conference lookup
+│
+├── llm/
+│   ├── prompts.py             # System and tool-specific prompts
+│   ├── agent.py               # Orchestrates tools + RAG + SQL + LLM
+│   └── query_router.py        # Routes queries to the right handler
+│
+├── app/
+│   └── main.py                # Streamlit / FastAPI frontend
+│
+└── requirements.txt
+```
+
+---
+
+## 🛠️ TECH STACK
+
+| Layer         | Technology                                             |
+| ------------- | ------------------------------------------------------ |
+| LLM Backend   | OpenAI GPT-4 / GPT-3.5 + LangChain                     |
+| Embeddings    | OpenAI text-embedding-3-small OR sentence-transformers |
+| Vector DB     | ChromaDB (local) or Pinecone (cloud)                   |
+| Relational DB | SQL (PostgreSQL / MySQL) for panel data                |
+| Web/API Layer | Streamlit or FastAPI                                   |
+| Scheduler     | cron / APScheduler for regular article ingestion       |
+
+---
+
+##  FUNCTION OF EACH FILE
+
+### `fetch_content.py`
+
+* Uses PubMed or arXiv API to fetch latest abstracts, articles, metadata
+
+### `chunk_text.py`
+
+* Cleans raw content and splits into 500-token chunks with overlap using LangChain’s splitter
+
+### `embed_and_store.py`
+
+* Converts chunks into vectors and stores them in a persistent vector DB (Chroma or Pinecone)
+* Adds metadata like date, URL, title
+
+### `sql_connector.py`
+
+* Connects to your internal panel SQL database
+* Used for dynamic user-specific queries like honoraria, profile edits
+
+### `panel_support_tool.py`
+
+* Wrapper for SQL query functions (e.g., `check_honorarium(user_id)`)
+* Includes function-calling schema for LLM agent
+
+### `conference_tool.py`
+
+* Provides data on conference names, dates, locations from static JSON or API
+
+### `prompts.py`
+
+* Contains system prompts and tool-specific prompts
+* Maintains tone and behavior of LLM assistant
+
+### `agent.py`
+
+* Core agent logic that uses LangChain’s `initialize_agent()` or OpenAI function-calling
+* Integrates SQL tools, RAG vector lookup, and hardcoded tools
+
+### `query_router.py`
+
+* Lightweight classifier that uses keywords + regex + zero-shot classification to route queries into the right category
+
+### `main.py`
+
+* Web interface to receive user queries and return final responses
+* Could be a chatbot UI using Streamlit or a REST endpoint using FastAPI
+
+---
+
+##  VECTOR DB FLOW CHART
+
+```mermaid
+flowchart TD
+    A[Scheduled Script (Daily)] --> B[Fetch New Articles via API]
+    B --> C[Clean & Chunk Text]
+    C --> D[Generate Embeddings (OpenAI or HF)]
+    D --> E[Upsert into Vector DB with Metadata]
+```
+
+* Embeddings are only generated once per document
+* Deduplication done via URL or article ID
+* Vector DB keeps all content indexed by date, topic, source
+
+---
+
+##  QUERY HANDLING WORKFLOW
+
+### Step-by-Step
+
+1. **User sends query**: via chat interface
+2. **Query classified**: research? support? conference?
+3. **If research:**
+
+   * Query is embedded
+   * Top-K documents fetched from vector DB
+   * Documents sent as context to LLM with a prompt
+4. **If support:**
+
+   * Calls SQL function with user\_id
+5. **If conference:**
+
+   * Calls static/API tool with relevant specialty info
+6. **LLM generates response and sends back to user**
+
+---
+
+##  DEPLOYMENT OPTIONS
+
+* Run ingestion on a schedule using cron or Airflow
+* Host vector DB locally (Chroma) or remotely (Pinecone)
+* Use Streamlit for MVP UI or FastAPI for full backend
+* Deploy on Docker + cloud (e.g., GCP, AWS, Azure)
+
+---
+
+##  Final Notes
+
+* Keep your system modular — you’ll want to **swap APIs, models, or tools** easily
+* Persist vector DB content — don’t re-embed daily unless data is highly volatile
+* Add **metadata** to all vector chunks — it makes filtering and updating cleaner
+
+Let me know if you'd like code samples or a starter repo!

@@ -1,0 +1,89 @@
+💡 Agastya: LLM-Powered Assistant for HCPs (Healthcare Professionals)
+------------------------------------------------------------
+
+🧠 OVERVIEW: How the LLM System Works
+
+Agastya is a Python-based LLM system built to assist Healthcare Professionals by answering queries related to:
+
+1. Real-time research/article queries
+2. Conference info lookup
+3. Panel support queries (honorarium, profile updates, etc.)
+
+The entire system is orchestrated using LangGraph, which allows for controlled, node-based flow logic. 
+The agent is enhanced with brief memory via Agent State, enabling short-term contextual reasoning within sessions.
+
+All embeddings and retrievals are managed through ChromaDB, a local vector store solution, allowing full on-premise control over medical literature and structured knowledge.
+
+------------------------------------------------------------
+
+🔁 Query Resolution Flow (Simplified Logic)
+
+User Input Query
+    ↓
+LangGraph: Classify Query Type Node
+    ↓
+ ┌────────────┬──────────────────────────┬────────────────────────────────┐
+ │ Panel      │ Conference Info Lookup   │ Research / Knowledge Lookup    │
+ │ Support    │                          │                                │
+ └────┬───────┴──────────────┬───────────┴────────────────────┬──────────┘
+      ↓                      ↓                                ↓
+  SQL Query             API or Static File Lookup        Embed Query → ChromaDB → Retrieve Vectors
+      ↓                      ↓                                ↓
+                   Final LLM Answer Based on Contextual Info (RAG)
+                                   ↓
+                            Final User Response
+
+------------------------------------------------------------
+
+🏗️ DIRECTORY STRUCTURE
+
+agastya-llm-assistant/
+│
+├── ingest_pipeline/               # Fetch, chunk, and embed content
+│   ├── fetch_content.py           # API calls to PubMed, arXiv, etc.
+│   ├── chunk_text.py              # Clean & chunk content
+│   ├── embed_and_store.py         # Embed and store in ChromaDB
+│
+├── db/
+│   ├── chroma_store/              # Local ChromaDB instance
+│   └── sql_connector.py           # Connects to internal SQL for panel support queries
+│
+├── agents/
+│   ├── langgraph_flow.py          # Node and edge definitions for LangGraph orchestration
+│   ├── memory.py                  # Manages brief session memory using Agent State
+│   └── main_agent.py              # Entry point for query classification and routing
+│
+├── config/
+│   ├── api_keys.yaml              # Secure keys for research APIs (e.g., arXiv, PubMed)
+│   ├── vectordb_config.yaml       # Chroma DB setup details
+│
+├── tests/
+│   └── test_vector_pipeline.py    # Ensure vector creation and retrieval works as expected
+│
+└── run.py                         # Bootstraps the agent and starts interaction loop
+
+------------------------------------------------------------
+
+✅ TECH STACK
+
+- Python 3.10+
+- LangGraph (orchestration)
+- ChromaDB (local vector DB)
+- OpenAI / Anthropic LLM APIs
+- SQLAlchemy (panel query access)
+- PyPDF, BeautifulSoup (for chunking and ingesting data)
+- FastAPI (if deployed as a web app)
+
+------------------------------------------------------------
+
+🧠 MEMORY & CONTEXT HANDLING
+- Agent State stores lightweight memory: recent queries, classification decision, tool usage.
+- Does not store PII or long-term sessions.
+- Can be extended to support multi-turn conversations if needed.
+
+------------------------------------------------------------
+
+📌 NEXT STEPS (OPTIONAL)
+- Add UI wrapper (Streamlit/FastAPI)
+- Add usage logging
+- Add eval pipeline (precision of panel answers, latency of research answers, etc.)
