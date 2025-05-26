@@ -1,14 +1,21 @@
-# Database files
-db/chroma_store/
-db/
-*.db
-
-# Python
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Database files
+db/
+
+# Virtual environment
+.venv-py312/
+
+# Environment variables
+# .env  # Commented out as you might want to keep this for your repo
+
+# Other common files to ignore
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -20,24 +27,7 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-ENV/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# VS Code
-.vscode/
-
-# Large data files
-ingest_pipeline/all_indications_raw_content.jsonl
-ingest_pipeline/chunked_content_for_embedding.jsonl
-ingest_pipeline/no_pubmed_indications_content.jsonl
-
-# Logs
-*.log 
+*.egg 

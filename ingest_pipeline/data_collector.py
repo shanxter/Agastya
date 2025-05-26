@@ -246,7 +246,7 @@ def fetch_who_news_data(search_term=None, max_results=100, start_date_str=None, 
     # Combine filter parts with 'and' if we have multiple conditions
     if filter_parts:
         params["$filter"] = " and ".join(filter_parts)
-    
+        
     response_data = make_api_request(WHO_NEWS_BASE_URL, params=params)
     
     items_to_process = []

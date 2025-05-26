@@ -1,0 +1,200 @@
+{
+    "products": {
+      "hcp_surveys": {
+        "name": "HCP Surveys",
+        "description": "Healthcare Professional Surveys allow you to share your expert medical insights and perspective on various healthcare topics.",
+        "benefits": [
+          "Monetary compensation for your valuable time and expertise",
+          "Influence the development of new treatments and medical approaches",
+          "Share your professional experience to improve healthcare outcomes",
+          "Flexible participation that works with your schedule"
+        ],
+        "how_to_start": "To get started with HCP Surveys, simply log in to your profile and click on take survey for the tiles present in your dashboard. Additionally for survey invitations in your email. Complete the screening questions to determine if you qualify for the full survey.",
+        "earnings": "Compensation varies by survey length and complexity, with typical payments ranging from $50-$200 per completed survey, depending on your specialty and the time required.",
+        "types": [
+          {
+            "name": "Traditional Surveys",
+            "description": "Standard online questionnaires about clinical practices, treatment decisions, and medical perspectives",
+            "compensation": "$50-$200 per completed survey"
+          },
+          {
+            "name": "Patient Chart Reviews",
+            "description": "Submit anonymized patient charts for research purposes",
+            "compensation": "$100-$150 per chart"
+          },
+          {
+            "name": "Sales Representative Interaction Reports",
+            "description": "Document and provide feedback on pharmaceutical sales representative visits",
+            "compensation": "Up to $100 per survey"
+          },
+          {
+            "name": "Qualitative Interviews",
+            "description": "One-on-one or small group discussions about specific medical topics or treatments",
+            "compensation": "$300-$350 for 45 minutes of your time"
+          }
+        ],
+        "faqs": [
+          {
+            "question": "How often will I receive surveys?",
+            "answer": "Survey frequency depends on your specialty and our clients' research needs. Most active HCPs receive 1-4 survey invitations per month."
+          },
+          {
+            "question": "How long do surveys take?",
+            "answer": "Most surveys take between 15-30 minutes to complete, though some specialized surveys may be longer."
+          }
+        ]
+      },
+        "hcp_pt": {
+            "name": "HCP-Patient Dialogue",
+            "description": "Collect real-time, organic audio recordings of clinical conversations between healthcare providers and patients to understand real-world clinical decision-making and patient-provider communication challenges.",
+            "benefits": [
+            "Substantial honorarium of up to $1000 per month",
+            "Contribute to improving patient-provider communication",
+            "Patients receive $30 Amazon gift cards for their participation",
+            "Simple recording process using only your smartphone",
+            "HIPAA-compliant process with full privacy protection"
+            ],
+            "how_to_start": "To participate in HCP-Patient Dialogue Research, download the ZoomRx app on your Android or iOS device. When matched with a relevant study, you'll use the app to explain the research to eligible patients, collect their consent, and record the conversation. After the recording, you'll complete a brief follow-up questionnaire based on the patient's chart.",
+            "earnings": "HCPs can earn up to $1000 honorarium per month based on conversation authenticity and study availability. Payments are made via PayPal or check. Your patients will receive $30 Amazon gift cards delivered through the app upon conversation submission.",
+            "faqs": [
+          {
+            "question": "Is patient consent required?",
+            "answer": "Yes, patient consent is mandatory for every recording. Consent forms are available within the ZoomRx app and can be shared via a link for remote visits."
+          },
+          {
+            "question": "What technology do I need?",
+            "answer": "You only need an Android or iOS device with the ZoomRx app installed. For remote visits, the recording and telemedicine call must use different devices."
+          },
+          {
+            "question": "How is patient privacy protected?",
+            "answer": "All recordings are anonymized and stripped of personally identifiable information. Data is stored securely with voice modulation and encryption, fully complying with HIPAA regulations."
+          },
+          {
+            "question": "Do I need institutional approval?",
+            "answer": "Formal institutional approval is typically not required, but it's recommended to check with your institution if you're unsure about their policies."
+          },
+          {
+            "question": "What should be recorded in the conversation?",
+            "answer": "Recordings should capture the full clinical conversation, including discussions about treatment options, patient reactions, and decision-making processes."
+          }
+        ]
+      },
+      "advisory_boards": {
+        "name": "Virtual Advisory Boards",
+        "description": "Participate in exclusive advisory discussions with pharmaceutical companies and research organizations to provide expert guidance on medical products and strategies.",
+        "benefits": [
+          "Premium compensation for your strategic input",
+          "Direct impact on pharmaceutical and medical device development",
+          "Networking with industry leaders and fellow experts",
+          "Convenient virtual format that eliminates travel requirements"
+        ],
+        "how_to_start": "Advisory board participation is by invitation based on your specialty and experience. Ensure your ZoomRx profile is complete with your clinical background and areas of expertise to increase your chances of selection.",
+        "earnings": "Advisory board participation typically pays $300-$500 per hour, with sessions usually lasting 1-2 hours.",
+        "faqs": [
+          {
+            "question": "How are advisory board members selected?",
+            "answer": "Selection is based on specialty, years of experience, patient volume, practice setting, and specific expertise relevant to the topic being discussed."
+          },
+          {
+            "question": "What technology do I need to participate?",
+            "answer": "You'll need a computer with a webcam, microphone, and stable internet connection. We use secure, easy-to-use virtual meeting platforms."
+          }
+        ]
+      },
+      "digital_tracker": {
+        "name": "Digital Tracker",
+        "description": "Digital Tracker is a passive digital insights platform that helps researchers understand how healthcare professionals engage with medical content online, providing valuable data on healthcare information trends without requiring active participation.",
+        "benefits": [
+          "Earn $1 for every healthcare-related email you forward to ZoomRx",
+          "Receive $30 monthly for allowing the browser extension to track healthcare ads and web usage",
+          "Contribute to research that shapes future medical education and communications",
+          "Complete privacy protection - no personal information or non-healthcare data is collected",
+          "Optional in-person interviews with additional compensation"
+        ],
+        "how_to_start": "Join Digital Tracker using your ZoomRx invite code. If you don't have a code, you can register your interest on the ZoomRx platform. Once approved, simply install the Safari browser extension and allow it to monitor specific healthcare content interactions while maintaining your complete privacy.",
+        "earnings": "Participants receive $30 monthly for passive participation through the browser extension, plus $1 for each healthcare-related email forwarded to ZoomRx. Additional compensation is available for optional feedback sessions or interviews.",
+        "technical_setup": {
+          "extension_installation": [
+            "Click the aA or Extension icon in Safari's address bar",
+            "Select 'Manage Extensions' from the dropdown",
+            "Enable the 'Digital Tracker' extension",
+            "Complete the onboarding and click 'Allow always' for proper functionality"
+          ]
+        },
+        "faqs": [
+          {
+            "question": "What data does Digital Tracker collect?",
+            "answer": "Digital Tracker ONLY collects information about your interactions with healthcare-related content. Personal information, banking data, and non-healthcare browsing is never tracked or stored."
+          },
+          {
+            "question": "How does the email forwarding work?",
+            "answer": "Simply forward healthcare-related emails you receive to your designated ZoomRx address. You'll earn $1 per qualifying email that provides insights into healthcare communications."
+          },
+          {
+            "question": "Can I uninstall the extension at any time?",
+            "answer": "Yes, you can uninstall and reinstall the Digital Tracker extension at your convenience without losing your account status."
+          }
+        ]
+      }
+    },
+    "general_info": {
+      "about_zoomrx": "ZoomRx is a healthcare research platform that enables medical professionals to share their expertise, participate in research activities, and earn substantial supplemental income.",
+      "earnings_potential": "Healthcare professionals can earn substantial supplemental income through ZoomRx, with active members reporting $5,000-$20,000+ annually depending on their specialty, participation level, and types of activities.",
+      "data_privacy": "ZoomRx ensures that all personal data is handled with the utmost confidentiality, complying with HIPAA regulations and industry best practices.",
+      "company_mission": "Our mission is to accelerate medical innovation by creating meaningful connections between healthcare stakeholders. By facilitating the exchange of knowledge between practitioners and researchers, we help bring better treatments to patients faster.",
+      "earning_opportunities": {
+        "survey_participation": "Healthcare professionals can earn by participating in surveys. For more information, please refer to the 'hcp_surveys' section.",
+        "referral_program": {
+          "hcp_referral": "Healthcare professionals can earn $30 for referring colleagues to the ZoomRx panel, provided the referred professional completes a survey within six months of joining.",
+          "patient_referral": "Professionals may also refer their patients to the ZoomRx panel and earn $10 per referral. Personalized referral links are provided for ease of sharing."
+        }
+      }
+    },
+    "participation_info": {
+      "eligibility": "ZoomRx opportunities are available to licensed healthcare professionals across various specialties. Eligibility for specific activities depends on your credentials, specialty, practice setting, and patient population.",
+      "time_commitment": "ZoomRx is designed to work around your schedule. Most activities take 15-60 minutes and can be completed at your convenience. There are no minimum participation requirements.",
+      "payment_methods": "ZoomRx offers several payment options including direct deposit, PayPal, and gift cards. Payments are processed within 4-6 weeks of completing an activity, though many payments are processed faster."
+    },
+    "dashboard_queries": {
+      "update_email": {
+        "query": "How can I update my email address?",
+        "answer": "To update your email address, please contact us at info@zoomrx.com. Our team will make the necessary changes and send you a confirmation email."
+      },
+      "update_payment_method": {
+        "query": "How can I update my payment method?",
+        "answer": "Log in to your account, navigate to the top of the dashboard, select 'Payment Settings,' choose your preferred payment method, add the required details, and click 'Submit.'"
+      },
+      "update_profile_information": {
+        "query": "How can I update my profile information?",
+        "answer": "Log in to your account, navigate to the top left corner of the dashboard, select 'Profile,' then update the relevant details under 'Practice Information.'"
+      },
+      "verification_status": {
+        "query": "How do I verify my account?",
+        "answer": "If your account is not verified, please send a photo of your physical medical license or an email from your institutional email address to info@zoomrx.com. Our team will assist you through the verification process."
+      },
+      "no_surveys_available": {
+        "query": "What should I do if no surveys are available?",
+        "answer": "Survey availability depends on the requirements of our client studies. You will be notified as soon as a suitable survey is available based on your profile."
+      },
+      "update_location": {
+        "query": "How can I update my location?",
+        "answer": "Log in to your account, navigate to the top left corner of the dashboard, select 'Profile,' then update your location details under 'Basic Information.'"
+      },
+      "contact_support": {
+        "query": "Who should I contact for support?",
+        "answer": "Log in to your account, navigate to the top left corner of the dashboard, and select 'Contact Us' to reach our support team."
+      },
+      "bonus_payment_timeline": {
+        "query": "When will my bonus payment be credited?",
+        "answer": "Bonus payments are typically processed within 72 hours after survey completion."
+      },
+      "participation_anonymity": {
+        "query": "Is my participation anonymous?",
+        "answer": "Yes, all survey results are reported in aggregate for research purposes only, in accordance with the Council of American Survey Research Organization guidelines."
+      },
+      "referral_link": {
+        "query": "How can I get my referral link?",
+        "answer": "Log in to your account, navigate to the top of the dashboard, select 'Refer & Earn' and access your referral link."
+      }
+    }
+  }

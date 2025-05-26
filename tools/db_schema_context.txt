@@ -1,0 +1,249 @@
+# DATABASE SCHEMA DOCUMENTATION
+This document provides information about the database schema to help generate accurate SQL queries for the panel management system.
+
+## TABLES AND RELATIONSHIPS
+
+-- Schema for ZoomRx Database
+
+-- Table: users_waves
+CREATE TABLE users_waves (
+    id INT PRIMARY KEY, -- Unique identifier for user's attempt
+    user_id INT NOT NULL, -- Foreign key to users table, user's unique identifier in ZoomRx database
+    wave_id INT NOT NULL, -- Foreign key to waves table, identifier for a survey's particular instance
+    honoraria FLOAT(12), -- Honoraria earned by the user in a specific attempt
+    status TINYINT(3), -- Status of the user wave attempt (status=1 is a complete)
+    completed_date DATETIME, -- Completion date of the attempt
+    start_date DATETIME, -- Start date of the attempt
+);
+
+-- Table: users_wave_details
+CREATE TABLE users_wave_details (
+    id INT PRIMARY KEY, -- Foreign key to users_waves id column
+    time_taken INT NOT NULL, -- Time taken per attempt in seconds
+);
+
+-- Table: users
+CREATE TABLE users (
+    id INT PRIMARY KEY, -- Unique user identifier
+    first_name VARCHAR(45), -- First name of the user
+    last_name VARCHAR(45), -- Last name of the user
+    phone VARCHAR(20), -- User's phone number
+    email VARCHAR(255), -- User's email address
+    address1 VARCHAR(255), -- Address line 1
+    address2 VARCHAR(255), -- Address line 2
+    city VARCHAR(45), -- City of the user
+    zip VARCHAR(45), -- Zip code of the user
+    profile_updated INT(10), -- Profile update status
+    state VARCHAR(45), -- State of the user
+    profession_type_id SMALLINT(5), -- Profession type ID
+    outstanding_payment FLOAT(10), -- Outstanding payment amount
+    type TINYINT(3), -- Type of user (e.g., Panelist, Admin)
+    region VARCHAR(45), -- Region of the user
+    primary_speciality_id SMALLINT(5), -- Primary specialty ID
+    practice_setting_id SMALLINT(5), -- Practice setting ID
+    country VARCHAR(45), -- Country of the user
+    npi VARCHAR(45), -- National Provider Identifier
+    payment_mode TINYINT(3), -- Payment mode selected by the user
+    payment_email VARCHAR(255), -- Payment-related email address
+    payment_in_progress FLOAT(10), -- Payment in progress amount
+    flags INT(10), -- Additional details or verification status
+    office_email VARCHAR(255), -- Office email address
+    overall_balance FLOAT(12), -- Overall balance for the user
+    referral_code VARCHAR(25), -- Referral code for the user
+    rating FLOAT(5) -- User rating based on responses
+);
+
+-- Table: surveys
+CREATE TABLE surveys (
+    id INT PRIMARY KEY, -- Unique identifier for surveys
+    type TINYINT(3), -- Type of survey based on internal definitions
+    paired_survey_id INT, -- Paired survey ID 
+    active TINYINT(3), -- Survey active status (0 = inactive, 1 = active)
+    expected_completion_time SMALLINT(5), -- Expected completion time of the survey in minutes
+    max_responses INT(10), -- Maximum number of responses allowed per user
+    status INT(10), -- Status of the survey
+    amazon_gift_card_amount FLOAT(12), -- Amazon gift card amount allocated
+    amazon_gift_card_currency ENUM('DOL_US') -- Currency of the Amazon gift card
+);
+
+-- Table: waves
+CREATE TABLE waves (
+    id INT PRIMARY KEY, -- Unique wave ID, waves are instances of a survey. Each survey when launched again will have a new wave
+    start_date DATE, -- Start date of the wave
+    end_date DATE, -- End date of the wave
+    survey_id INT NOT NULL, -- Foreign key to surveys table
+    quota INT(10), -- Maximum number of responses targeted
+    max_responses SMALLINT(5) -- Maximum responses allowed in this wave
+);
+
+-- Table: earnings
+CREATE TABLE earnings (
+    id INT PRIMARY KEY, -- Unique identifier for earnings
+    date DATETIME, -- Date of the earning initiation
+    description VARCHAR(255), -- Description of the payment
+    users_wave_id INT NOT NULL, -- Foreign key to users_waves table
+    transaction_id INT, -- Foreign key to transaions table
+    payable_date DATETIME -- Date the earning becomes payable
+);
+
+-- Table: transactions
+CREATE TABLE transactions (
+    id INT PRIMARY KEY, -- Unique transaction ID
+    user_id INT NOT NULL, -- Foreign key to users table
+    transaction_type_id INT, -- Transaction type ID
+    amount FLOAT(10,2), -- Amount of the transaction
+    type TINYINT, -- Type of the transaction
+    running_balance FLOAT(10,2), -- Current running balance
+    payable_balance FLOAT(10,2), -- Payable balance of the transaction
+    created DATETIME -- Creation date of the transaction
+);
+
+-- Table: lime_surveys_languagesettings
+CREATE TABLE lime_surveys_languagesettings (
+    surveyls_survey_id INT PRIMARY KEY, -- Unique survey ID, foreign key to the surveys table
+    surveyls_display_title VARCHAR(200) -- Display title of the survey
+);
+
+-- Table: surveys_users
+CREATE TABLE surveys_users (
+    survey_id INT NOT NULL, -- Foreign key to surveys table
+    user_id INT NOT NULL, -- Foreign key to users table
+    is_active TINYINT(1) -- Whether the survey is active for the user
+);
+
+### Key Relationships
+- users_waves.user_id → users.id
+- users_waves.wave_id → waves.id
+- waves.survey_id → surveys.id
+- earnings.users_wave_id → users_waves.id
+- earnings.transaction_id → transactions.id
+- users_wave_details.user_wave_id → users_waves.id
+- lime_surveys_languagesettings.surveyls_survey_id → surveys.id
+
+
+## COMMON QUERY PATTERNS
+
+### Get user's total earnings in a date range
+```sql
+SELECT SUM(t.amount) AS total_earnings
+FROM users_waves uw
+LEFT JOIN earnings e ON uw.id = e.users_wave_id
+JOIN transactions t ON t.id = e.transaction_id
+WHERE uw.user_id = %s
+  AND uw.completed_date >= %s 
+  AND uw.completed_date <= %s;
+```
+
+### Get surveys completed by user in a date range
+```sql
+SELECT DISTINCT(l.surveyls_display_title)
+FROM surveys_users su
+JOIN waves w ON w.survey_id = su.survey_id
+JOIN surveys s ON su.survey_id = s.id
+JOIN lime_surveys_languagesettings l ON l.surveyls_survey_id = su.survey_id
+JOIN users_waves uw ON uw.wave_id = w.id
+WHERE uw.user_id = %s 
+  AND uw.status = 1 
+  AND uw.completed_date >= %s
+  AND uw.completed_date <= %s;
+```
+
+### Get user's last participation date
+```sql
+SELECT MAX(uw.completed_date) AS last_participation_date
+FROM users_waves uw
+WHERE uw.user_id = %s AND uw.status = 1;
+```
+
+### Get time spent on surveys in a period
+```sql
+SELECT sum(uwd.time_taken)/60 FROM `users_waves` uw
+left join users_wave_details uwd on uwd.id = uw.id
+left join waves w on uw.wave_id = w.id
+WHERE uw.user_id = %s
+  AND uw.completed_date >= %s 
+  AND uw.completed_date <= %s
+  AND w.survey_id NOT IN (SELECT sa.survey_id FROM survey_attributes sa WHERE sa.attribute = 'paired_common_survey_id');
+```
+
+### Get user's first participation date (when they joined)
+```sql
+SELECT MIN(uw.completed_date) AS first_participation_date
+FROM users_waves uw
+WHERE uw.user_id = %s AND uw.status = 1;
+```
+
+### Get total lifetime participation stats
+```sql
+SELECT 
+    COUNT(DISTINCT uw.id) AS total_completed_surveys,
+    SUM(CASE WHEN uw.status = 1 THEN 1 ELSE 0 END) AS completed_count,
+    COUNT(*) AS total_attempts,
+    SUM(t.amount) AS total_earnings
+FROM users_waves uw
+LEFT JOIN earnings e ON uw.id = e.users_wave_id
+LEFT JOIN transactions t ON t.id = e.transaction_id
+WHERE uw.user_id = %s;
+```
+
+### Get last 5 surveys completed by user
+```sql
+SELECT 
+    l.surveyls_display_title AS survey_name,
+    uw.completed_date
+FROM users_waves uw
+JOIN waves w ON w.id = uw.wave_id
+JOIN lime_surveys_languagesettings l ON l.surveyls_survey_id = w.survey_id
+WHERE uw.user_id = %s
+  AND uw.status = 1
+ORDER BY uw.completed_date DESC
+LIMIT 5;
+```
+
+## QUERY RESTRICTIONS AND GUIDELINES
+
+1. Always use parameterized queries with %s placeholders for user_id and date values.
+2. Always include a WHERE clause with uw.user_id = %s when querying user-specific data.
+3. For completed surveys, filter with uw.status = 1.
+4. Use LEFT JOINs when a record might not exist (e.g., earnings).
+5. When calculating time spent, exclude paired common surveys.
+6. Format output appropriately, such as:
+   - Monetary values should be formatted with 2 decimal places
+   - Date formats should be consistent
+   - Time should be converted from seconds to minutes where appropriate
+
+## DATA FORMATS AND EXAMPLES
+
+- Dates are stored in MySQL datetime format: YYYY-MM-DD HH:MM:SS
+- Time periods are defined by start_date and end_date parameters
+- Status codes:
+  - 1 = Completed
+  - 0 = Incomplete/Attempted
+- Time spent is stored in seconds but usually displayed in minutes
+
+## EXAMPLE QUERIES AND REQUESTS
+
+### User story request
+Question: "Tell me about my relationship with ZoomRx"
+ - Fetch users joining date from users table
+ - Get total attempts and total completes from users_waves table (status = 1 is completes, take all statuses including 1 and count them as attempts)
+ - Fetch lifetime earnings from ZoomRx
+ - Fetch total unique surveys the user has participated in
+ - Use all the numbers to show to a HCP in a story based way
+```
+
+### Latest survey name
+Question: "What was the last survey I completed?"
+SQL:
+```sql
+SELECT 
+    l.surveyls_display_title AS survey_name,
+    uw.completed_date
+FROM users_waves uw
+JOIN waves w ON w.id = uw.wave_id
+JOIN lime_surveys_languagesettings l ON l.surveyls_survey_id = w.survey_id
+WHERE uw.user_id = %s
+  AND uw.status = 1
+ORDER BY uw.completed_date DESC
+LIMIT 1;
+``` 
